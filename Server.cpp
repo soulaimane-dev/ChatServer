@@ -6,12 +6,12 @@
 /*   By: sbouabid <sbouabid@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/23 08:57:25 by sbouabid          #+#    #+#             */
-/*   Updated: 2024/10/24 09:49:12 by sbouabid         ###   ########.fr       */
+/*   Updated: 2024/10/24 10:18:16 by sbouabid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
-#include "server.hpp"
+#include "Server.hpp"
 #include <__nullptr>
 #include <cstring>
 #include <netinet/in.h>
@@ -85,7 +85,7 @@ void	Server::CheckMovementFromClient()
 {
 	char	buffer[1024];
 
-	for (int i = 1; i < ClientsFds.size(); i++)
+	for (size_t i = 1; i < ClientsFds.size(); i++)
 	{
 		if (fds[i].revents & POLLIN)
 		{
@@ -94,9 +94,24 @@ void	Server::CheckMovementFromClient()
 			if (bytes == 0)
 			{
 				ClientsFds.erase(ClientsFds.begin() + i - 1);
+				fds[i] = fds[ClientsFds.size()];
 				std::cout << "Client Desconected \n";
 			}
-			// else if
+			else if (bytes > 0)
+			{
+				std::cout << "This is new message" << std::endl;
+				BroadcastMessage(fds[i].fd, buffer);
+			}
 		}
+	}
+}
+
+void	Server::BroadcastMessage(int fd, char *buffer)
+{
+	for (size_t i = 0; i < ClientsFds.size(); i++)
+	{
+		if (ClientsFds[i] == fd)
+			continue;
+		send(ClientsFds[i], buffer, strlen(buffer), 0);
 	}
 }

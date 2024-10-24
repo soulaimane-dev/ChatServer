@@ -6,7 +6,7 @@
 /*   By: sbouabid <sbouabid@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/23 08:57:18 by sbouabid          #+#    #+#             */
-/*   Updated: 2024/10/24 09:23:03 by sbouabid         ###   ########.fr       */
+/*   Updated: 2024/10/24 10:14:44 by sbouabid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,8 @@ class	Server
 
 		int		AcceptNewClient();
 		void	CheckMovementFromClient();
+		void	BroadcastMessage(int fd, char *buffer);
+
 	public:
 		void	StartServerSetup();
 		void	AcceptConnections();
