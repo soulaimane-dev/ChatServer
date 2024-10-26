@@ -20,6 +20,7 @@ class	Server
 
 		int		AcceptNewClient();
 		void	MonitorClientMovements();
+		void	BroadcastMessage(int fd);
 
 	public:
 		Server();

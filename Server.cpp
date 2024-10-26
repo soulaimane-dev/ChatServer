@@ -5,6 +5,7 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <vector>
 
 Server::Server()
 {
@@ -16,7 +17,8 @@ Server::Server()
 	ServerAddress.sin_port = htons(6667);
 	ServerAddress.sin_family = AF_INET;
 	ServerAddress.sin_addr.s_addr = INADDR_ANY;
-
+	int opt = 1;
+	setsockopt(ServerFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	if (bind(ServerFD, (struct sockaddr *)& ServerAddress, sizeof(ServerAddress)) == -1)
 	{
 		close(ServerFD);
@@ -35,7 +37,7 @@ Server::Server()
 	pfds.push_back(pfd);
 
 	std::cout << "The Server has been Started :)" << std::endl;
-	std::cout << "IP: 127.0.0.1 \nPORT: 6667";
+	std::cout << "IP: 127.0.0.1 \nPORT: 6667" << std::endl;
 }
 
 void	Server::AcceptConnections()
@@ -44,8 +46,11 @@ void	Server::AcceptConnections()
 		int	pollEnvent = poll(pfds.data(), pfds.size(), -1);
 		if (pollEnvent == -1)
 			throw std::runtime_error("Poll Failed !");
-		if ((pfds[0].revents & POLLIN) && AcceptNewClient() == -1)
-			continue;
+		if (pfds[0].revents & POLLIN)
+		{
+			if (AcceptNewClient() == -1)
+				continue;
+		}
 		MonitorClientMovements();
 	}
 }
@@ -70,20 +75,31 @@ void	Server::MonitorClientMovements()
 	{
 		if (pfds[i].revents & POLLIN)
 		{
-			memset(buffer, 0, strlen(buffer));
-			int bytes = recv(pfds[i].fd, buffer, sizeof(buffer), 1);
+			memset(buffer, 0, sizeof(buffer));
+			int bytes = recv(pfds[i].fd, buffer, sizeof(buffer), 0);
 			if (bytes <= 0)
 			{
 				std::cout << "Client Disconnected !" << std::endl;
 				close(pfds[i].fd);
 				pfds.erase(pfds.begin() + i);
-				ClientFDs.erase(ClientFDs.begin() + i);
+				ClientFDs.erase(ClientFDs.begin() + i - 1);
 				i--;
 			}
 			else {
 				std::cout << "New message received\n";
-				// add broadCast Message here
+				BroadcastMessage(pfds[i].fd);
 			}
 		}
+	}
+}
+
+void	Server::BroadcastMessage(int fd)
+{
+	std::vector<int>::iterator it;
+	for (it = ClientFDs.begin(); it != ClientFDs.end(); it++)
+	{
+		if (*it == fd)
+			continue;
+		send(*it, buffer, sizeof(buffer), 0);
 	}
 }
